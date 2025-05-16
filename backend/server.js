@@ -21,7 +21,7 @@ app.use("/api", postRouter);
 
 connectDB()
   .then(() => {
-    app.listen(port, () => {
+    app.listen(port, '0.0.0.0', () => {
       console.log(`Server is running on port ${port}`);
     });
   })
