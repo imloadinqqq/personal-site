@@ -33,6 +33,45 @@ ORDER BY p.postId;
   }
 });
 
+router.get("/posts/:id", async (req, res) => {
+  const postId = parseInt(req.params.id);
+
+  if (isNaN(postId)) {
+    return res.status(400).json({ error: "Invalid post ID" });
+  }
+
+  try {
+    const query = `
+      SELECT
+        p.postId,
+        p.title,
+        p.author,
+        p.content,
+        p.dateCreated,
+        COALESCE(GROUP_CONCAT(DISTINCT t.tagName ORDER BY t.tagName SEPARATOR ', '), '') AS Tags
+      FROM Post p
+      LEFT JOIN TagPost tp ON p.postId = tp.postId
+      LEFT JOIN Tag t ON tp.tagId = t.tagId
+      WHERE p.postId = ?
+      GROUP BY p.postId
+      LIMIT 1;
+    `;
+
+    const results = await getData(query, [postId]);
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    const post = results[0];
+    post.Tags = post.Tags ? post.Tags.split(", ") : [];
+
+    res.json(post);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to retrieve post", details: error.message });
+  }
+});
+
 router.post("/posts", async (req, res) => {
   const { title, author, content, tags = [] } = req.body;
   const connectionPool = getPool();
