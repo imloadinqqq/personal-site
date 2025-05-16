@@ -1,1 +1,28 @@
-<h1>UNDER CONSTRUCTION</h1>
+<div class="blog-container">
+  <h2>Welcome to my blog!</h2>
+
+  <div *ngIf="filteredPosts.length === 0">No posts found.</div>
+  <div class="tag-buttons">
+    <button *ngFor="let tag of allTags" (click)="filterByTag(tag)">
+      {{ tag }}
+    </button>
+  </div>
+  <div class="clear-button">
+    <button (click)="clearFilter()">Clear Filter</button>
+  </div>
+  <div
+    *ngFor="let post of filteredPosts"
+    class="blog-post"
+    [routerLink]="['/post', post.postId]"
+    style="cursor: pointer"
+  >
+    <h3>{{ post.title }}</h3>
+    <p><strong>Author:</strong> {{ post.author }}</p>
+    <p><strong>Date:</strong> {{ post.dateCreated | date : "medium" }}</p>
+    <div class="tags">
+      <span>Tags: </span>
+      <span *ngFor="let tag of post.Tags" class="tag">{{ tag + " " }}</span>
+    </div>
+    <p class="content">{{ post.content }}</p>
+  </div>
+</div>

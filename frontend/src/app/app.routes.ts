@@ -7,10 +7,12 @@ import { ProjectsComponent } from '../components/projects/projects.component';
 import { ResumeComponent } from '../components/resume/resume.component';
 import { BooksComponent } from '../components/books/books.component';
 import { HomeComponent } from '../components/home/home.component';
+import { PostComponent } from '../components/post/post.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent, title: 'ALEX DIAZ' },
   { path: 'blog', component: BlogComponent, title: 'blog' },
+  { path: 'post/:id', component: PostComponent },
   { path: 'about', component: AboutComponent, title: 'about' },
   { path: 'photos', component: PhotosComponent, title: 'photos' },
   { path: 'equipment', component: EquipmentComponent, title: 'equipment' },
