@@ -16,7 +16,7 @@ export interface BlogPost {
 })
 export class BlogService {
 
-  private apiUrl = 'http://localhost:8080/api/posts';
+  private apiUrl = 'http://amdiazz.com:8080/api/posts';
 
   constructor(private http: HttpClient) { }
 
