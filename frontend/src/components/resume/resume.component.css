@@ -1,0 +1,19 @@
+@media (max-width: 768px) {
+  #resume {
+    font-size: 1.2rem;
+  }
+
+  #picture {
+    width: 100%;
+  }
+}
+body {
+  margin: 20px;
+}
+#resume {
+  font-size: 2rem;
+}
+img {
+  max-width: 100%;
+  height: auto;
+}

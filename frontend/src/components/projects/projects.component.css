@@ -1,0 +1,13 @@
+h1 {
+  font-weight: bold;
+  font-style: italic;
+}
+
+#list {
+  font-weight: bold;
+  font-style: italic;
+}
+
+a:visited {
+  color: blue;
+}

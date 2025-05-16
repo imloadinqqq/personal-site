@@ -1,0 +1,70 @@
+@media (max-width: 768px) {
+  #name {
+    font-size: 24px;
+  }
+
+  #email {
+    font-size: 14px;
+  }
+
+  #timezone {
+    font-size: 14px;
+  }
+
+  #list a {
+    display: inline;
+  }
+
+  #container {
+    padding: 20px;
+  }
+
+  #picture img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+#container {
+    text-align: center;
+  overflow: auto;
+  height: 100%;
+  padding: 1%;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+#name {
+  font-size: 60px;
+}
+
+#email {
+  font-size: 25px;
+  text-decoration: underline;
+  color: black;
+}
+
+#picture img {
+  max-width: 50%;
+  height: auto;
+}
+
+#timezone {
+  font-size: 20px;
+}
+
+#list a {
+  font-size: 20px;
+}
+
+a:visited {
+  color: blue;
+}
+
+.icon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  padding-left: 5px;
+  padding-right: 5px;
+}

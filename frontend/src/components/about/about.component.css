@@ -1,0 +1,39 @@
+@media (max-width: 768px) {
+  #blahblah {
+    display: block;
+    font-size: 24px;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+}
+
+body {
+  display: flex;
+  flex-direction: row;
+}
+
+img {
+  width: 400px;
+  height: auto;
+}
+#blahblah {
+  margin-top: 20px;
+  display: block;
+  font-size: 20px;
+  font-weight: bold;
+  font-style: italic;
+}
+#links {
+  position: inherit;
+  padding: 4em;
+  font-weight: bold;
+  font-style: italic;
+}
+a:visited {
+  color: blue;
+}
