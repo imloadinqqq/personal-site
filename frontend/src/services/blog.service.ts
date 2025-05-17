@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../environments/environment';
 
 export interface BlogPost {
   postId: number;
@@ -16,7 +17,7 @@ export interface BlogPost {
 })
 export class BlogService {
 
-  private apiUrl = 'https://amdiazz.com:8080/api/posts';
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 
