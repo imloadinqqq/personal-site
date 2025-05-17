@@ -18,6 +18,6 @@ app.use(morgan('tiny'));
 app.disable('x-powered-by');
 app.use('/api', postRouter);
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Server started at port ${port}`);
 });
