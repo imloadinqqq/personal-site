@@ -7,10 +7,9 @@ const app = express();
 const port = 8080;
 
 app.use(cors({
-	origin: ["http://localhost:4200", "https://amdiazz.com"],
+	origin: ["http://localhost:4200", "https://amdiazz.com", "amdiazz.netlify.app"],
 	methods: ["GET", "POST", "PUT", "DELETE"],
 	allowedHeaders: ["X-API-KEY", "Content-Type"],
-	credentials: true
 }));
 
 
