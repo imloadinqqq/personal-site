@@ -1,31 +1,24 @@
-const express = require("express");
-const cors = require("cors");
-const morgan = require("morgan");
+const express = require('express');
+const cors = require('cors');
+const morgan = require('morgan');
 const postRouter = require("./routes/posts");
-const { connectDB } = require("./db");
 
 const app = express();
 const port = 8080;
 
 app.use(cors({
-	origin: "https://amdiazz.com",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type"],
+	origin: ["http://localhost:4200", "https://amdiazz.com"],
+	methods: ["GET", "POST", "PUT", "DELETE"],
+	allowedHeaders: ["X-API-KEY", "Content-Type"],
+	credentials: true
 }));
 
+
 app.use(express.json());
-app.use(morgan("tiny"));
-app.disable("x-powered-by");
+app.use(morgan('tiny'));
+app.disable('x-powered-by');
+app.use('/api', postRouter);
 
-app.use("/api", postRouter);
-
-connectDB()
-  .then(() => {
-    app.listen(port, '0.0.0.0', () => {
-      console.log(`Server is running on port ${port}`);
-    });
-  })
-  .catch((err) => {
-    console.error("Failed to start server due to DB issue:", err);
-    process.exit(1);
-  });
+app.listen(port, () => {
+  console.log(`Server started at port ${port}`);
+});

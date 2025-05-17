@@ -1,44 +1,48 @@
 const express = require("express");
+const { getData } = require("../db");
 const router = express.Router();
-const { getData, getPool } = require("../db.js");
+
+const timeLog = (req, res, next) => {
+  console.log('Time: ', Date.now());
+  next();
+}
+router.use(timeLog);
 
 
-router.get("/posts", async (req, res) => {
+router.get('/posts', async (req, res) => {
   try {
     const query = `
       SELECT
-    p.postId,
-    p.title,
-    p.author,
-    p.content,
-    p.dateCreated,
-    COALESCE(GROUP_CONCAT(DISTINCT t.tagName ORDER BY t.tagName SEPARATOR ', '), '') AS Tags
-FROM Post p
-LEFT JOIN TagPost tp ON p.postId = tp.postId
-LEFT JOIN Tag t ON tp.tagId = t.tagId
-GROUP BY p.postId
-ORDER BY p.postId;
+        p.postId,
+        p.title,
+        p.author,
+        p.content,
+        p.dateCreated,
+        COALESCE(GROUP_CONCAT(DISTINCT t.tagName ORDER BY t.tagName SEPARATOR ', '), '') AS Tags
+      FROM Post p
+      LEFT JOIN TagPost tp ON p.postId = tp.postId
+      LEFT JOIN Tag t ON tp.tagId = t.tagId
+      GROUP BY p.postId
+      ORDER BY p.postId;
     `;
 
     const results = await getData(query);
 
-    const formattedResults = results.map(post => ({
+    const posts = results.map(post => ({
       ...post,
-      Tags: post.Tags ? post.Tags.split(', '): []
+      Tags: post.Tags
+        ? post.Tags.split(',').map(tag => tag.trim())
+        : []
     }));
 
-    res.json(formattedResults);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to retrieve data", details: error.message });
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to retrieve data", details: err.message });
   }
 });
 
-router.get("/posts/:id", async (req, res) => {
-  const postId = parseInt(req.params.id);
-
-  if (isNaN(postId)) {
-    return res.status(400).json({ error: "Invalid post ID" });
-  }
+router.get('/posts/:id', async (req, res) => {
+  const postId = req.params.id;
 
   try {
     const query = `
@@ -53,108 +57,94 @@ router.get("/posts/:id", async (req, res) => {
       LEFT JOIN TagPost tp ON p.postId = tp.postId
       LEFT JOIN Tag t ON tp.tagId = t.tagId
       WHERE p.postId = ?
-      GROUP BY p.postId
-      LIMIT 1;
+      GROUP BY p.postId;
     `;
 
     const results = await getData(query, [postId]);
 
     if (results.length === 0) {
-      return res.status(404).json({ error: "Post not found" });
+      return res.status(404).json({ error: 'Post not found' });
     }
 
     const post = results[0];
-    post.Tags = post.Tags ? post.Tags.split(", ") : [];
+    post.Tags = post.Tags ? post.Tags.split(',').map(tag => tag.trim()) : [];
 
     res.json(post);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to retrieve post", details: error.message });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to retrieve post', details: err.message });
   }
 });
 
-router.post("/posts", async (req, res) => {
+router.post('/posts', async (req, res) => {
   const { title, author, content, tags = [] } = req.body;
-  const connectionPool = getPool();
 
-  if (!title || !author || !content) {
-    return res.status(400).json({ error: "Title, author, and content are required." });
-  }
-
-  const connection = await connectionPool.getConnection();
   try {
-    await connection.beginTransaction();
+    const insertPostQuery = `
+      INSERT INTO Post (title, author, content, dateCreated)
+      VALUES (?, ?, ?, NOW());
+    `;
+    const result = await runQuery(insertPostQuery, [title, author, content]);
+    const postId = result.insertId;
 
-    // Post handling
-    const [postResult] = await connection.execute(
-      `INSERT INTO Post (title, author, content, dateCreated) VALUES (?, ?, ?, NOW())`,
-      [title, author, content]
-    );
-
-    const postId = postResult.insertId;
-
-    // Tag handling
     for (const tagName of tags) {
-      let [rows] = await connection.execute(
-        `SELECT tagId FROM Tag WHERE tagName = ?`,
-        [tagName]
-      );
+      const [tag] = await getData(`SELECT tagId FROM Tag WHERE tagName = ?`, [tagName]);
+      let tagId = tag?.tagId;
 
-      let tagId;
-      if (rows.length > 0) {
-        tagId = rows[0].tagId;
-      } else {
-        const [tagInsertResult] = await connection.execute(
-          `INSERT INTO Tag (tagName) VALUES (?)`,
-          [tagName]
-        );
-        tagId = tagInsertResult.insertId;
+      if (!tagId) {
+        const tagResult = await runQuery(`INSERT INTO Tag (tagName) VALUES (?)`, [tagName]);
+        tagId = tagResult.insertId;
       }
 
-      await connection.execute(
-        `INSERT INTO TagPost (postId, tagId) VALUES (?, ?)`,
-        [postId, tagId]
-      );
+      await runQuery(`INSERT INTO TagPost (postId, tagId) VALUES (?, ?)`, [postId, tagId]);
     }
 
-    await connection.commit();
-    res.status(201).json({ message: "Post created successfully", postId });
-  } catch (error) {
-    await connection.rollback();
-    console.error("Error creating post:", error);
-    res.status(500).json({ error: "Failed to create post", details: error.message });
-  } finally {
-    connection.release();
+    res.status(201).json({ message: 'Post created', postId });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create post', details: err.message });
   }
 });
 
-router.delete("/posts/:id", async (req, res) => {
-  const connectionPool = getPool();
-  const connection = await connectionPool.getConnection();
-  const id = parseInt(req.params.id);
+router.put('/posts/:id', async (req, res) => {
+  const postId = req.params.id;
+  const { title, author, content, tags = [] } = req.body;
 
   try {
-    await connection.beginTransaction();
+    await runQuery(
+      `UPDATE Post SET title = ?, author = ?, content = ? WHERE postId = ?`,
+      [title, author, content, postId]
+    );
 
-    await connection.execute(`DELETE FROM TagPost WHERE postId = ?`, [id]);
+    await runQuery(`DELETE FROM TagPost WHERE postId = ?`, [postId]);
 
-    const query = `DELETE FROM Post WHERE postId = ?`;
-    const [deleteResult] = await connection.execute(query, [id]);
+    for (const tagName of tags) {
+      const [tag] = await getData(`SELECT tagId FROM Tag WHERE tagName = ?`, [tagName]);
+      let tagId = tag?.tagId;
 
-    await connection.commit();
+      if (!tagId) {
+        const tagResult = await runQuery(`INSERT INTO Tag (tagName) VALUES (?)`, [tagName]);
+        tagId = tagResult.insertId;
+      }
 
-    if (deleteResult.affectedRows === 0) {
-      res.status(404).json({ message: "Post not found" });
-    } else {
-      res.status(200).json({ message: "Post deleted successfully", deletedId: id });
+      await runQuery(`INSERT INTO TagPost (postId, tagId) VALUES (?, ?)`, [postId, tagId]);
     }
-  } catch (error) {
-    await connection.rollback();
-    console.error("Error deleting post:", error);
-    res.status(500).json({ error: "Failed to delete post", details: error.message });
-  } finally {
-    connection.release();
+
+    res.json({ message: 'Post updated' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update post', details: err.message });
   }
 });
 
+router.delete('/posts/:id', async (req, res) => {
+  const postId = req.params.id;
+
+  try {
+    await runQuery(`DELETE FROM TagPost WHERE postId = ?`, [postId]);
+    await runQuery(`DELETE FROM Post WHERE postId = ?`, [postId]);
+
+    res.json({ message: 'Post deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete post', details: err.message });
+  }
+});
 
 module.exports = router;
